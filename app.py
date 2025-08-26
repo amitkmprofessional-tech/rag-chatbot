@@ -1,14 +1,18 @@
 import streamlit as st
 from langchain_community.embeddings import SentenceTransformerEmbeddings
 from langchain_community.vectorstores import Chroma
-from langchain_google_genai import GoogleGenerativeAI # Import Google's LLM
+from langchain_google_genai import GoogleGenerativeAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-import os
+import os # Make sure os is imported
 
 # --- App Title and Description ---
 st.set_page_config(page_title="DocBot", page_icon="🤖")
 st.title("🤖 DocBot: Your Document Assistant")
+
+# --- Explicitly load the API key ---
+# This is the new, crucial part.
+api_key = os.getenv("GOOGLE_API_KEY")
 
 # --- Load the Knowledge Base ---
 PERSIST_DIRECTORY = 'db'
@@ -25,9 +29,8 @@ Answer:
 """
 QA_CHAIN_PROMPT = PromptTemplate.from_template(template)
 
-# Instantiate Google's Gemini model
-# Ensure your GOOGLE_API_KEY is set as an environment variable
-llm = GoogleGenerativeAI(model="gemini-pro", temperature=0)
+# Instantiate Google's Gemini model, passing the key directly
+llm = GoogleGenerativeAI(model="gemini-pro", google_api_key=api_key, temperature=0)
 
 qa_chain = RetrievalQA.from_chain_type(
     llm,
@@ -40,13 +43,10 @@ qa_chain = RetrievalQA.from_chain_type(
 user_input = st.text_input("Ask a question about your documents:")
 
 if user_input:
-    # Before running, ensure the API key is set
-    if not os.getenv("GOOGLE_API_KEY"):
+    if not api_key:
         st.error("Google API key not set. Please set the environment variable.")
     else:
         with st.spinner("Searching..."):
             result = qa_chain.invoke({"query": user_input})
             st.subheader("Answer:")
             st.write(result["result"])
-
-           
